@@ -4,7 +4,7 @@
 	"version": "1.0",
 	"manifest_version": 3,
 	"permissions": ["tabs", "scripting"],
-	"host_permissions": ["http://*/", "https://*/"],
+	"host_permissions": ["https://*.barclaycardus.com/"],
 	"action": {
 		"default_popup": "popup.html"
 	}
