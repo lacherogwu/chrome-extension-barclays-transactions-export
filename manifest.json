@@ -7,11 +7,5 @@
 	"host_permissions": ["http://*/", "https://*/"],
 	"action": {
 		"default_popup": "popup.html"
-	},
-	"content_scripts": [
-		{
-			"js": ["scripts/papaparse.min.js"],
-			"matches": ["https://google.com/*"]
-		}
-	]
+	}
 }

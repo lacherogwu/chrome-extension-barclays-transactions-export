@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<link rel="stylesheet" href="style.css" />
 		<script src="scripts/papaparse.min.js"></script>
 		<script src="popup.js" type="module"></script>
 	</head>
 	<body>
-		<button id="download">Download</button>
-		<span id="message" hidden></span>
+		<div class="title">Barclays Transactions Export</div>
+		<div class="flex justify-center">
+			<button id="download" disabled>Download</button>
+		</div>
+		<div id="feedback"></div>
 	</body>
 </html>

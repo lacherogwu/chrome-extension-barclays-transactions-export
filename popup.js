@@ -1,6 +1,5 @@
-async function getTransactions() {
-	console.log('fetching transactions...');
-	const url = 'https://www.barclaycardus.com/servicing/jserv/transaction/getPostedTransactions?cycleDate=06/12/22&_=1656346342702';
+async function getTransactions(date) {
+	const url = `https://www.barclaycardus.com/servicing/jserv/transaction/getPostedTransactions?cycleDate=${date || ''}&_=${Date.now()}`;
 	const options = {
 		headers: {
 			accept: 'application/json, text/javascript',
@@ -26,29 +25,61 @@ async function getTransactions() {
 	const res = await fetch(url, options);
 	const data = await res.json();
 
+	if (data?.redirectURL?.includes('/authenticate')) {
+		throw new Error('You must login first');
+	}
 	return data;
+}
+
+function setButtonState(isDownloading) {
+	if (isDownloading) {
+		download.setAttribute('disabled', true);
+		download.innerHTML = '<img src="three-dots.svg" width="100%" />';
+	} else {
+		download.removeAttribute('disabled');
+		download.innerHTML = 'Download';
+	}
+}
+
+function setFeedbackState(html = '', className = '') {
+	feedback.className = className;
+	feedback.innerHTML = html;
 }
 
 async function handleClick(event) {
 	event.preventDefault();
+	setFeedbackState();
+	setButtonState(true);
 
-	console.log(await getCurrentTab());
-	return;
 	try {
-		const data = await getTransactions();
+		const date = await getStatementDate();
+		const data = await getTransactions(date);
 
-		const transactions = data.transactions.map(item => ({
-			...item,
-			amount: item.amount.fAmount,
-			merchantCategoryType: `${item.merchantCategoryType.value} - ${item.merchantCategoryType.description}`,
-			merchantLocation: `${item.merchantLocation.city} ${item.merchantLocation.state} ${item.merchantLocation.zipCode}`,
-		}));
+		const transactions = data.transactions.map(item => {
+			const {
+				amount: { fAmount: amount },
+				merchantCategoryType,
+				merchantLocation,
+			} = item;
 
-		console.log(data);
-		generateCsv(transactions, 'test.csv');
+			return {
+				...item,
+				amount: item.type === 'PURCHASE' ? amount : -amount,
+				merchantCategoryType: `${merchantCategoryType.value} - ${merchantCategoryType.description}`,
+				merchantLocation: `${merchantLocation.city} ${merchantLocation.state} ${merchantLocation.zipCode}`,
+			};
+		});
+
+		const { statementBeginDate, statementDate } = transactions[0];
+
+		const filename = `Barclays ${getDateString(statementBeginDate)} - ${getDateString(statementDate)}.csv`;
+		generateCsv(transactions, filename);
+		setFeedbackState('Statement download successfully', 'success');
 	} catch (err) {
+		setFeedbackState(err.message, 'error');
 		console.log(err);
 	}
+	setButtonState();
 }
 
 download.addEventListener('click', handleClick);
@@ -70,20 +101,37 @@ function generateCsv(items, filename) {
 async function getCurrentTab() {
 	let queryOptions = { active: true };
 	let [tab] = await chrome.tabs.query(queryOptions);
-	console.log(tab);
-	const scriptToExec = `(${scrapeThePage})()`;
-	console.log(scriptToExec);
-
-	// Run the script in the context of the tab
-	const scraped = await chrome.scripting.executeScript({
-		target: { tabId: tab.id },
-		func: scrapeThePage,
-	});
-	console.log(scraped);
 
 	return tab;
 }
 
-function scrapeThePage() {
-	return document.querySelector('#answer-14362608 > div > div.answercell.post-layout--right > div.mt24 > div > div:nth-child(3) > div').innerHTML;
+function getStatementDateElementValue() {
+	return document.querySelector('#tp_cycles')?.value;
 }
+
+async function getStatementDate() {
+	const tab = await getCurrentTab();
+	const data = await chrome.scripting.executeScript({
+		target: { tabId: tab.id },
+		func: getStatementDateElementValue,
+	});
+
+	return data[0]?.result;
+}
+
+function getDateString(date) {
+	if (!date) return getDateString(new Date().toISOString());
+	return date.split('T')[0];
+}
+
+const isBarclaysWebsite = string => /^https:\/\/\w+\.barclaycardus.com/.test(string);
+window.onload = async function () {
+	const tab = await getCurrentTab();
+	if (!tab || !isBarclaysWebsite(tab.url)) {
+		const html = 'You must open <a class="underline" target="_blank" href="https://www.barclaycardus.com">https://www.barclaycardus.com</a>';
+		setFeedbackState(html, 'error');
+		return;
+	}
+
+	download.removeAttribute('disabled');
+};
