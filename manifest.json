@@ -1,0 +1,17 @@
+{
+	"name": "Barclays export transactions",
+	"description": "Export transactions with more data",
+	"version": "1.0",
+	"manifest_version": 3,
+	"permissions": ["tabs", "scripting"],
+	"host_permissions": ["http://*/", "https://*/"],
+	"action": {
+		"default_popup": "popup.html"
+	},
+	"content_scripts": [
+		{
+			"js": ["scripts/papaparse.min.js"],
+			"matches": ["https://google.com/*"]
+		}
+	]
+}
