@@ -126,9 +126,7 @@ async function handleClick(event) {
 }
 
 async function onLoadHandler() {
-	console.log('Loaded');
 	const tab = await getCurrentTab();
-	console.log(tab);
 	if (!tab || !isBarclaysWebsite(tab.url)) {
 		const html = 'You must open <a class="underline" target="_blank" href="https://www.barclaycardus.com">https://www.barclaycardus.com</a>';
 		setFeedbackState(html, 'error');
