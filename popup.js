@@ -120,7 +120,6 @@ async function handleClick(event) {
 		setFeedbackState('Statement download successfully', 'success');
 	} catch (err) {
 		setFeedbackState(err.message, 'error');
-		console.log(err);
 	}
 	setButtonState();
 }
