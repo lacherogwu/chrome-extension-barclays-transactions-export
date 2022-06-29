@@ -1,7 +1,7 @@
 {
 	"name": "Barclays Export Transactions",
 	"description": "Export transactions with more data to csv file",
-	"version": "1.2",
+	"version": "1.2.1",
 	"manifest_version": 3,
 	"permissions": ["tabs", "scripting"],
 	"host_permissions": ["https://*.barclaycardus.com/"],
